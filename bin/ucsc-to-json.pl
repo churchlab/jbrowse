@@ -64,6 +64,8 @@ extra configuration for the client, in JSON syntax, e.g.
 
   '{"featureCss": "background-color: #668; height: 8px;", "histScale": 2}'
 
+For historical reasons, this is only merged into the C<style> section of the new track's configuration.
+
 =item --nclChunk <size in bp>
 
 Size of the individual Nested Containment List chunks. Default 50,000
@@ -198,7 +200,7 @@ foreach my $tableName (@$tracks) {
     my @types = split(" ", $trackMeta->{type});
     my $type = $types[0];
     $typeMaps{$type}
-        or die "Cannot convert $tableName track; this script is not capable of handling $type tracks";
+        or die "Cannot convert $tableName track; this script is not capable of handling $type tracks.\n";
 
     # check that we have the data files for that track
     unless( -f "$indir/$tableName.sql" && -f "$indir/$tableName.txt.gz" ) {

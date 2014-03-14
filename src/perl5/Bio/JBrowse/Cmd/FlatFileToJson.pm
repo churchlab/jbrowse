@@ -51,6 +51,8 @@ sub option_definitions {
         "subfeatureClasses=s",
         "maxLookback=i",
         "clientConfig=s",
+        "config=s",
+        "metadata=s",
         "thinType=s",
         "thickType=s",
         "type=s@",
@@ -58,6 +60,7 @@ sub option_definitions {
         "compress",
         "sortMem=i",
         "help|h|?",
+        "nameAttributes=s",
     )
 }
 
@@ -84,14 +87,17 @@ sub run {
         $self->opt( nclChunk => $nclChunk );
     }
 
-    for my $optname ( qw( clientConfig subfeatureClasses ) ) {
+    for my $optname ( qw( clientConfig subfeatureClasses metadata config ) ) {
         if( my $o = $self->opt($optname) ) {
             $self->opt( $optname => Bio::JBrowse::JSON->new->decode( $o ));
         }
     }
 
 
+    # Merge configurations
     my %config = (
+        %{ $self->opt('config') || {} },
+
         trackType      => $self->opt('trackType'),
         style          => {
             %{ $self->opt('clientConfig') || {} },
@@ -100,7 +106,8 @@ sub run {
             ( $self->opt('arrowheadClass')    ? ( arrowheadClass    => $self->opt('arrowheadClass')    ) : () ),
             ( $self->opt('subfeatureClasses') ? ( subfeatureClasses => $self->opt('subfeatureClasses') ) : () ),
         },
-        ( $self->opt('menuTemplate') ? ( menuTemplate => $self->opt('menuTemplate') ) : () ),
+        ( $self->opt('metadata') ? ( metadata => $self->opt('metadata') ) : () ),
+        ( $self->opt('category') ? ( category => $self->opt('menuTemplate') ) : () ),
         key          => defined( $self->opt('key') ) ? $self->opt('key') : $self->opt('trackLabel'),
         compress     => $self->opt('compress'),
      );
@@ -137,7 +144,8 @@ sub make_gff_stream {
     return Bio::JBrowse::FeatureStream::GFF3_LowLevel->new(
         parser => $p,
         no_subfeatures => $self->opt('noSubfeatures'),
-        track_label => $self->opt('trackLabel')
+        track_label => $self->opt('trackLabel'),
+        name_attrs => $self->_name_attrs
      );
 }
 
@@ -158,6 +166,7 @@ sub make_bed_stream {
         no_subfeatures => $self->opt('noSubfeatures'),
         stream => sub { $io->next_feature },
         track_label => $self->opt('trackLabel'),
+        name_attrs => $self->_name_attrs
     );
 }
 
@@ -172,9 +181,9 @@ sub make_gbk_stream {
 
     return Bio::JBrowse::FeatureStream::Genbank->new(
          parser => $parser,
-         track_label => $self->opt('trackLabel')
+         track_label => $self->opt('trackLabel'),
+         name_attrs => $self->_name_attrs
     );
-
 }
 
 sub make_feature_filter {

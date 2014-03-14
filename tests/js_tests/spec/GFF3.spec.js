@@ -44,7 +44,7 @@ describe( 'GFF3 utils', function() {
                               'seq_id' : 'FooSeq',
                               'source' : 'barsource',
                               'start' : 234,
-                              'strand' : '+',
+                              'strand' : 1,
                               'type' : 'match'
                           }
                       ],
@@ -58,7 +58,7 @@ describe( 'GFF3 utils', function() {
                               'seq_id' : "Noggin,+-\%Foo\tbar",
                               'source' : 'barsource',
                               'start' : 234,
-                              'strand' : '+',
+                              'strand' : 1,
                               'type' : 'match'
                           }
                       ]
@@ -126,8 +126,18 @@ describe( 'GFF3 store', function() {
                runs( function() {
                          //console.log( features );
                          expect( features.length ).toEqual( 197 );
-                         expect( features[6].get('subfeatures').length ).toEqual( 3 );
-                         expect( features[6].get('subfeatures')[0].get('subfeatures').length ).toEqual( 6 );
+                         var edenIndex;
+                         array.some( features, function(f,i) {
+                                         if( f.get('name') == 'EDEN' ) {
+                                             edenIndex = i;
+                                             return true;
+                                         }
+                                         return false;
+                                     });
+                         expect( edenIndex ).toBeGreaterThan( 3 );
+                         expect( edenIndex ).toBeLessThan( 7 );
+                         expect( features[edenIndex].get('subfeatures').length ).toEqual( 3 );
+                         expect( features[edenIndex].get('subfeatures')[0].get('subfeatures').length ).toEqual( 6 );
                      });
            }).call();
 

@@ -8,6 +8,7 @@ define( [
             'JBrowse/Store/DeferredFeaturesMixin',
             'JBrowse/Store/DeferredStatsMixin',
             'JBrowse/Store/SeqFeature/GlobalStatsEstimationMixin',
+            'JBrowse/Model/XHRBlob',
             './GFF3/Parser'
         ],
         function(
@@ -20,6 +21,7 @@ define( [
             DeferredFeatures,
             DeferredStats,
             GlobalStatsEstimationMixin,
+            XHRBlob,
             Parser
         ) {
 
@@ -30,7 +32,11 @@ return declare([ SeqFeatureStore, DeferredFeatures, DeferredStats, GlobalStatsEs
   */
 {
     constructor: function( args ) {
-        this.data = args.blob;
+        this.data = args.blob ||
+            new XHRBlob( this.resolveUrl(
+		this._evalConf(args.urlTemplate)
+                         )
+                       );
         this.features = [];
         this._loadFeatures();
     },
@@ -55,7 +61,6 @@ return declare([ SeqFeatureStore, DeferredFeatures, DeferredStats, GlobalStatsEs
                                        if( !( regRefName in seenRefs ))
                                            seenRefs[ regRefName ] = features.length;
 
-                                       feature.strand = {'+':1,'-':-1}[feature.strand] || 0;
                                        features.push( feature );
                                    });
                 },
@@ -75,14 +80,19 @@ return declare([ SeqFeatureStore, DeferredFeatures, DeferredStats, GlobalStatsEs
                     thisB._deferred.features.resolve( features );
                 }
             });
-
+        var fail = lang.hitch( this, '_failAllDeferred' );
         // parse the whole file and store it
         this.data.fetchLines(
             function( line ) {
-                parser.addLine(line);
+                try {
+                    parser.addLine(line);
+                } catch(e) {
+                    fail('Error parsing GFF3.');
+                    throw e;
+                }
             },
             lang.hitch( parser, 'finish' ),
-            lang.hitch( this, '_failAllDeferred' )
+            fail
         );
     },
 
@@ -98,7 +108,12 @@ return declare([ SeqFeatureStore, DeferredFeatures, DeferredStats, GlobalStatsEs
     },
 
     _compareFeatureData: function( a, b ) {
-        return a.seq_id.localeCompare( b.seq_id ) || ( a.start - b.start );
+        if( a.seq_id < b.seq_id )
+            return -1;
+        else if( a.seq_id > b.seq_id )
+            return 1;
+
+        return a.start - b.start;
     },
 
     _getFeatures: function( query, featureCallback, finishedCallback, errorCallback ) {
