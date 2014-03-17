@@ -46,6 +46,7 @@ sub tempdir {
         '--key' => 'Example Features',
         '--autocomplete' => 'all',
         '--cssClass' => 'feature2',
+        '--metadata' => '{"description": "toasted barrel head"}',
         '--clientConfig' =>  '{"featureCss": "height: 8px;", "histScale": 2}',
         '--urltemplate' => 'http://example.com/{name}/{start}/{end}',
         );
@@ -59,6 +60,7 @@ sub tempdir {
         '--trackLabel' => 'CDS',
         '--key' => 'Predicted genes',
         '--type' => 'CDS:predicted,mRNA:exonerate,mRNA:predicted',
+        '--metadata' => '{"fall_reason": "strain"}',
         '--autocomplete' => 'all',
         '--cssClass' => 'cds',
         '--compress',
@@ -96,6 +98,7 @@ sub tempdir {
 
     my $tracklist = $read_json->('trackList.json');
     is( $tracklist->{tracks}[1]{storeClass}, 'JBrowse/Store/SeqFeature/NCList' );
+    is_deeply( $tracklist->{tracks}[2]{metadata}, { fall_reason => 'strain' } );
     is_deeply( $tracklist->{tracks}[1]{style},
                { featureCss   => 'height: 8px;',
                  histScale    => 2,
@@ -326,6 +329,46 @@ for my $testfile ( "tests/data/au9_scaffold_subset.gff3", "tests/data/au9_scaffo
                        'Seq_id',
                        'Name',
                        'Score'
+                       ],
+                   'isArrayAttr' => {
+                       }
+                   }
+               ) or diag explain $trackdata->{'trackData.jsonz'};
+
+}
+
+QUANTGFF3:
+{
+    # test quantitative gff3
+    my $tempdir = tempdir();
+    run_with (
+        '--out' => $tempdir,
+        '--gff' => catfile('tests','data','quantitative.gff3'),
+        '--compress',
+        '--key' => 'Quantitative GFF3 test',
+        '--trackLabel' => 'quantgff3',
+        );
+    my $read_json = sub { slurp( $tempdir, @_ ) };
+    my $trackdata = FileSlurping::slurp_tree( catdir( $tempdir, qw( tracks quantgff3 ctgA )));
+    is( scalar( grep @{$trackdata->{$_}} == 0,
+                grep /^lf/,
+                keys %$trackdata
+               ),
+        0,
+        'no empty chunks in trackdata'
+      ) or diag explain $trackdata;
+
+    is_deeply( $trackdata->{'trackData.jsonz'}{intervals}{classes}[0],
+               {
+                   'attributes' => [
+                       'Start',
+                       'End',
+                       'Strand',
+                       'Source',
+                       'Seq_id',
+                       'Name',
+                       'Type',
+                       'Score',
                        ],
                    'isArrayAttr' => {
                        }

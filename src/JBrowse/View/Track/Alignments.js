@@ -20,13 +20,6 @@ return declare( [ HTMLFeatures, AlignmentsMixin],
  * @lends JBrowse.View.Track.Alignments
  */
 {
-    constructor: function( args )  {
-        // if his track shows subfeatures, turn subfeature creation on in store
-        // howevery if this.config.style.showSubfeatures is false, not setting store.createSubfeatures to 
-        //    false, because other tracks may be using same store, and may need it toggled on
-        if (this.config.style.showSubfeatures) { this.store.createSubfeatures = true; }
-    }, 
-
     _defaultConfig: function() {
         return Util.deepUpdate(
             dojo.clone( this.inherited(arguments) ),
@@ -39,6 +32,7 @@ return declare( [ HTMLFeatures, AlignmentsMixin],
                 hideSecondary: true,
                 hideSupplementary: true,
                 hideMissingMatepairs: false,
+                hideUnmapped: true,
                 hideForwardStrand: false,
                 hideReverseStrand: false,
 
@@ -48,7 +42,7 @@ return declare( [ HTMLFeatures, AlignmentsMixin],
                     arrowheadClass: 'arrowhead',
                     centerChildrenVertically: true,
                     showMismatches: true,
-                    showSubfeatures: false, 
+                    showSubfeatures: false,
                     showLabels: false
                 }
             }

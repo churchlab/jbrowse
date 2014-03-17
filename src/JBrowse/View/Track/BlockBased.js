@@ -85,7 +85,26 @@ return declare( [Component,DetailsMixin,FeatureFiltererMixin,Destroyable],
         this.setFeatureFilterParentComponent( this.browser.view );
 
         this.store = args.store;
+
+        // retrieve any user-set style info
+        lang.mixin( this.config.style, this.getUserStyles() );
     },
+
+    // get/set persistent per-user style information for this track
+    updateUserStyles: function( settings ) {
+        // set in this object
+        lang.mixin( this.config.style, settings );
+        // set in the saved style
+        var saved = JSON.parse( this.browser.cookie("track-style-" + this.name ) || '{}' );
+        lang.mixin( saved, settings );
+        this.browser.cookie( "track-style-" + this.name, saved );
+        // redraw this track
+        this.redraw();
+    },
+    getUserStyles: function() {
+        return JSON.parse( this.browser.cookie("track-style-" + this.name ) || '{}' );
+    },
+
 
     /**
      * Returns object holding the default configuration for this track
@@ -154,8 +173,7 @@ return declare( [Component,DetailsMixin,FeatureFiltererMixin,Destroyable],
                 className: "track-label dojoDndHandle",
                 id: "label_" + this.name,
                 style: {
-                    position: 'absolute',
-                    top: 0
+                    position: 'absolute'
                 }
             },this.div);
 
@@ -184,7 +202,6 @@ return declare( [Component,DetailsMixin,FeatureFiltererMixin,Destroyable],
         // make the track menu with things like 'save as'
         this.makeTrackMenu();
     },
-
 
     hide: function() {
         if (this.shown) {
@@ -454,10 +471,12 @@ return declare( [Component,DetailsMixin,FeatureFiltererMixin,Destroyable],
     },
 
     fillTooManyFeaturesMessage: function( blockIndex, block, scale, error ) {
+        var message = (error && error.message || 'Too much data to show').replace(/\.$/,'');
+
         this.fillMessage(
             blockIndex,
             block,
-            (error && error.message || 'Too much data to show')
+            message
                 + (scale >= this.browser.view.maxPxPerBp ? '': '; zoom in to see detail')
                 + '.'
         );
@@ -777,11 +796,15 @@ return declare( [Component,DetailsMixin,FeatureFiltererMixin,Destroyable],
                     xhrdialog:      'xhrDialog',
                     xhr:            'xhrDialog',
                     newwindow:      'newWindow',
-                    "_blank":       'newWindow'
+                    "_blank":       'newWindow',
+                    thiswindow:     'navigateTo',
+                    navigateto:     'navigateTo'
                 }[(''+spec.action).toLowerCase()];
 
                 if( spec.action == 'newWindow' )
                     window.open( url, '_blank' );
+                else if( spec.action == 'navigateTo' )
+                    window.location = url;
                 else if( spec.action in { iframeDialog:1, contentDialog:1, xhrDialog:1, bareDialog: 1} )
                     track._openDialog( spec, evt, ctx );
             }

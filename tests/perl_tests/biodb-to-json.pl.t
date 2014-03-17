@@ -15,6 +15,13 @@ use lib 'tests/perl_tests/lib';
 use FileSlurping 'slurp';
 
 
+use Bio::JBrowse::Cmd::BioDBToJson;
+
+sub run_with {
+    Bio::JBrowse::Cmd::BioDBToJson->new(@_)->run;
+}
+
+
 { # test volvox
 
     my $tempdir   = File::Temp->newdir( CLEANUP => $ENV{KEEP_ALL} ? 0 : 1 );
@@ -23,7 +30,7 @@ use FileSlurping 'slurp';
     dircopy( 'tests/data/volvox_formatted_refseqs', $tempdir );
 
     diag "writing output to $tempdir";
-    system $^X, 'bin/biodb-to-json.pl', (
+    run_with (
         '--quiet',
         '--conf'  => 'sample_data/raw/volvox.json',
         '--out'   => "$tempdir",
@@ -89,7 +96,7 @@ use FileSlurping 'slurp';
     dircopy( 'tests/data/volvox_formatted_refseqs', $tempdir );
 
     diag "writing output to $tempdir";
-    system $^X, 'bin/biodb-to-json.pl', (
+    run_with(
         '--quiet',
         '--compress',
         '--conf'  => 'sample_data/raw/volvox.json',
@@ -154,7 +161,7 @@ use FileSlurping 'slurp';
         '--out'   => "$tempdir",
         );
 
-    system $^X, 'bin/biodb-to-json.pl', (
+    run_with (
         '--quiet',
         '--conf'  => 'sample_data/raw/yeast.json',
         '--out'   => "$tempdir",
@@ -169,6 +176,7 @@ use FileSlurping 'slurp';
       'chunkSize' => 20000,
       'key' => 'Reference sequence',
       'label' => 'DNA',
+      category => 'Reference sequence',
       'type' => 'SequenceTrack',
       'urlTemplate' => 'seq/{refseq_dirpath}/{refseq}-',
       'storeClass' => 'JBrowse/Store/Sequence/StaticChunked',

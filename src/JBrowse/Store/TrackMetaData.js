@@ -133,6 +133,21 @@ var Meta = declare( null,
         return metarecord;
     },
 
+    // map of special comparator functions for certain metadata items
+    comparatorMap: {
+        // for category metadata, split on "/" and compare
+        "category": function(a,b) {
+            var acs = (a||'Uncategorized').split(/\s*\/\s*/);
+            var bcs = (b||'Uncategorized').split(/\s*\/\s*/);
+            var ac, bc, compresult;
+            while( (ac=acs.shift()) && (bc=bcs.shift()) ) {
+                if(( compresult = ac.localeCompare( bc ) ))
+                    return compresult;
+            }
+            return 0;
+        }
+    },
+
     addTracks: function( trackConfigs, suppressEvents ) {
         if( trackConfigs.length ) {
             // clear the query cache
@@ -197,12 +212,23 @@ var Meta = declare( null,
         }));
 
         // sort the facet indexes by ident, so that we can do our
-        // kind-of-efficient N-way merging when querying
+        // kind-of-efficient N-way merging when querying.  also,
+        // uniqify them by identity.
         var itemSortFunction = dojo.hitch( this, '_itemSortFunc' );
         dojo.forEach( dojof.values( this.facetIndexes.byName ), function( facetIndex ) {
-            dojo.forEach( dojof.keys( facetIndex.byValue ), function( value ) {
-                facetIndex.byValue[value].items = facetIndex.byValue[value].items.sort( itemSortFunction );
-            });
+            dojo.forEach( dojof.values( facetIndex.byValue ), function( valueIndex ) {
+                var uniqueItems = [];
+                var seen =  {};
+                //NOTE: the first record loaded with a given identity always wins
+                array.forEach( valueIndex.items, function( item ) {
+                                   var id = this.getIdentity( item );
+                                   if( ! seen[id] ) {
+                                       seen[id] = true;
+                                       uniqueItems.push( item );
+                                   }
+                               },this);
+                valueIndex.items = uniqueItems.sort( itemSortFunction );
+            },this);
         },this);
 
         this.ready = true;
